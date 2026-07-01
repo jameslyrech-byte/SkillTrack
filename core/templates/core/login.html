@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <style>
+        :root {
+            --bg: #eef2f5;
+            --panel: #ffffff;
+            --text: #17212b;
+            --muted: #5b6672;
+            --line: #b8c1cc;
+            --primary: #0f766e;
+            --primary-dark: #0a5c55;
+            --danger: #b42318;
+            --success: #157347;
+        }
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .screen {
+            width: min(92vw, 430px);
+            padding: 34px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 12px 32px rgba(23, 33, 43, 0.12);
+        }
+        .logo {
+            width: 42px;
+            height: 42px;
+            margin: 0 auto 10px;
+            display: grid;
+            place-items: center;
+            border: 2px solid var(--text);
+            font-weight: 700;
+        }
+        h1 {
+            margin: 0 0 26px;
+            text-align: center;
+            font-size: 1.65rem;
+        }
+        label {
+            display: block;
+            margin: 16px 0 6px;
+            color: var(--text);
+            font-weight: 700;
+        }
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 1px solid #7c8794;
+            border-radius: 6px;
+            color: var(--text);
+            background: #fff;
+            font-size: 1rem;
+        }
+        .password-row { position: relative; }
+        .toggle-password {
+            position: absolute;
+            right: 6px;
+            top: 6px;
+            width: 72px;
+            height: 32px;
+            border: 1px solid #7c8794;
+            border-radius: 6px;
+            background: #f8fafc;
+            color: var(--text);
+            cursor: pointer;
+        }
+        .password-row input { padding-right: 88px; }
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 14px 0 24px;
+            font-size: 0.94rem;
+        }
+        .remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-weight: 400;
+        }
+        a { color: var(--primary-dark); font-weight: 700; }
+        .button {
+            width: 100%;
+            min-height: 46px;
+            border: 0;
+            border-radius: 6px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .button:disabled {
+            background: #8ba7a4;
+            cursor: not-allowed;
+        }
+        .footer {
+            margin: 24px 0 0;
+            text-align: center;
+            color: var(--muted);
+        }
+        .message {
+            margin: 0 0 14px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: #fef3f2;
+            color: var(--danger);
+            font-weight: 700;
+        }
+        .message.success {
+            background: #ecfdf3;
+            color: var(--success);
+        }
+        @media (max-width: 520px) {
+            .screen { padding: 24px; }
+            .row { align-items: flex-start; flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <main class="screen" aria-labelledby="login-title">
+        <div class="logo" aria-hidden="true">X</div>
+        <h1 id="login-title">Welcome Back</h1>
+
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="message {{ msg.tags }}" role="status">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" id="login-form" novalidate>
+            {% csrf_token %}
+            <label for="email">Email Address</label>
+            <input id="email" type="email" name="email" value="{{ email|default:'' }}" autocomplete="email" placeholder="user@domain.com" required>
+
+            <label for="password">Password</label>
+            <div class="password-row">
+                <input id="password" type="password" name="password" autocomplete="current-password" required>
+                <button class="toggle-password" type="button" data-target="password" aria-label="Show password">Show</button>
+            </div>
+
+            <div class="row">
+                <label class="remember" for="remember_me">
+                    <input id="remember_me" type="checkbox" name="remember_me">
+                    Remember Me
+                </label>
+                <a href="{% url 'password_reset' %}">Forgot Password?</a>
+            </div>
+
+            <button class="button" id="submit-button" type="submit" disabled>Sign In</button>
+        </form>
+
+        <p class="footer">Don't have an account? <a href="{% url 'register' %}">Sign Up</a></p>
+    </main>
+
+    <script>
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+        const submit = document.getElementById('submit-button');
+
+        function syncSubmitState() {
+            submit.disabled = !email.value.trim() || !password.value.trim();
+        }
+
+        document.querySelector('.toggle-password').addEventListener('click', (event) => {
+            const target = document.getElementById(event.currentTarget.dataset.target);
+            const showing = target.type === 'text';
+            target.type = showing ? 'password' : 'text';
+            event.currentTarget.textContent = showing ? 'Show' : 'Hide';
+            event.currentTarget.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        });
+
+        email.addEventListener('input', syncSubmitState);
+        password.addEventListener('input', syncSubmitState);
+        syncSubmitState();
+    </script>
+</body>
+</html>
