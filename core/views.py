@@ -51,20 +51,68 @@ def log_action(user, action_flag, change_message):
 
 # --- AUTHENTICATION VIEWS ---
 
+def _unique_username(email):
+    base = email.split('@')[0][:150] or 'user'
+    username = base
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        suffix = str(counter)
+        username = f"{base[:150 - len(suffix)]}{suffix}"
+        counter += 1
+    return username
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
-        
+
+    context = {
+        'full_name': '',
+        'email': '',
+    }
+
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            messages.success(request, "Account created successfully! You can now log in.")
+        full_name = (request.POST.get('full_name') or '').strip()
+        email = _normalize_email(request.POST.get('email'))
+        password = request.POST.get('password') or ''
+        confirm_password = request.POST.get('confirm_password') or ''
+        terms = request.POST.get('terms')
+
+        context.update({'full_name': full_name, 'email': email})
+
+        if not full_name:
+            messages.error(request, 'Full name is required.')
+        elif not email or not _valid_email(email):
+            messages.error(request, 'A valid email address is required.')
+        elif User.objects.filter(email=email).exists():
+            messages.error(request, 'A user with this email address already exists.')
+        elif not PASSWORD_PATTERN.match(password):
+            messages.error(
+                request,
+                'Password must be at least 8 characters and include uppercase, number, and special character.',
+            )
+        elif password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+        elif not terms:
+            messages.error(request, 'You must accept the Terms & Conditions.')
+        else:
+            name_parts = full_name.split(None, 1)
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+            user = User.objects.create_user(
+                username=_unique_username(email),
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+            )
             log_action(user, 'ADD', f"New user registered: {user.username} (Email: {user.email})")
-            return redirect('login')
-    else:
-        form = UserRegisterForm()
-    return render(request, 'core/register.html', {'form': form})
+            login(request, user)
+            messages.success(request, 'Welcome! Your account has been created.')
+            return redirect('dashboard')
+
+    return render(request, 'core/register.html', context)
 
 
 def login_view(request):
@@ -106,6 +154,12 @@ def login_view(request):
         # Authentication failed
         attempts = cache.get(_attempt_key(email), 0) + 1
         cache.set(_attempt_key(email), attempts, LOCKOUT_SECONDS)
+
+        if User.objects.filter(email=email).exists():
+            error_message = "Incorrect password. Please try again or use Forgot Password."
+        else:
+            error_message = "No account found for this email. Please register first."
+
         if attempts >= LOCKOUT_LIMIT:
             cache.set(_lockout_key(email), True, LOCKOUT_SECONDS)
             log_action(None, 'EDIT', f"Account lockout triggered for email: {email}")
@@ -114,7 +168,7 @@ def login_view(request):
                 "Account temporarily locked due to too many failed attempts. Please try again in 15 minutes."
             )
         else:
-            messages.error(request, "Incorrect email or password. Please try again.")
+            messages.error(request, error_message)
 
     return render(request, 'core/login.html')
 

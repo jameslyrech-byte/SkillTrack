@@ -34,6 +34,12 @@
             </div>
             <div class="meter" aria-hidden="true"><span id="strength-bar"></span></div>
             <div class="strength-text" id="strength-text">Use 8+ characters with uppercase, number, and special character.</div>
+            <ul class="password-requirements" id="password-requirements" aria-live="polite">
+                <li id="req-length">At least 8 characters</li>
+                <li id="req-upper">One uppercase letter (A-Z)</li>
+                <li id="req-number">One number (0-9)</li>
+                <li id="req-special">One special character (!@#$...)</li>
+            </ul>
 
             <label class="auth-field" for="confirm_password">Confirm Password</label>
             <div class="password-row">
@@ -48,6 +54,7 @@
             </label>
 
             <button class="auth-button" id="submit-button" type="submit" disabled>Register</button>
+            <p class="submit-hint" id="submit-hint" role="status"></p>
         </form>
 
         <p class="auth-footer auth-text">Already have an account? <a class="auth-link" href="{% url 'login' %}">Log In</a></p>
@@ -65,33 +72,71 @@
         const strengthBar = document.getElementById('strength-bar');
         const strengthText = document.getElementById('strength-text');
         const matchText = document.getElementById('match-text');
+        const submitHint = document.getElementById('submit-hint');
+        const requirements = {
+            length: document.getElementById('req-length'),
+            upper: document.getElementById('req-upper'),
+            number: document.getElementById('req-number'),
+            special: document.getElementById('req-special'),
+        };
+
+        function passwordChecks(value) {
+            return {
+                length: value.length >= 8,
+                upper: /[A-Z]/.test(value),
+                number: /\d/.test(value),
+                special: /[^A-Za-z0-9]/.test(value),
+            };
+        }
 
         function passwordScore(value) {
-            return [
-                value.length >= 8,
-                /[A-Z]/.test(value),
-                /\d/.test(value),
-                /[^A-Za-z0-9]/.test(value)
-            ].filter(Boolean).length;
+            return Object.values(passwordChecks(value)).filter(Boolean).length;
         }
 
         function syncForm() {
-            const score = passwordScore(formFields.password.value);
+            const password = formFields.password.value;
+            const checks = passwordChecks(password);
+            const score = passwordScore(password);
             const labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
             const colors = ['#b42318', '#b42318', '#a15c07', '#0f766e', '#157347'];
+
+            Object.keys(requirements).forEach((key) => {
+                requirements[key].classList.toggle('met', checks[key]);
+            });
+
             strengthBar.style.width = `${score * 25}%`;
             strengthBar.style.background = colors[score];
-            strengthText.textContent = formFields.password.value ? `Password strength: ${labels[score]}` : 'Use 8+ characters with uppercase, number, and special character.';
+            strengthText.textContent = password
+                ? `Password strength: ${labels[score]}`
+                : 'Use 8+ characters with uppercase, number, and special character.';
 
-            const passwordsMatch = formFields.password.value && formFields.password.value === formFields.confirm.value;
+            const passwordsMatch = password && password === formFields.confirm.value;
             matchText.textContent = formFields.confirm.value && !passwordsMatch ? 'Passwords do not match.' : '';
             matchText.style.color = '#b42318';
 
-            submit.disabled = !formFields.name.value.trim()
-                || !formFields.email.value.trim()
-                || score < 4
-                || !passwordsMatch
-                || !formFields.terms.checked;
+            const canSubmit = formFields.name.value.trim()
+                && formFields.email.value.trim()
+                && score === 4
+                && passwordsMatch
+                && formFields.terms.checked;
+
+            submit.disabled = !canSubmit;
+
+            if (!canSubmit) {
+                if (!formFields.name.value.trim() || !formFields.email.value.trim()) {
+                    submitHint.textContent = 'Enter your full name and email to continue.';
+                } else if (score < 4) {
+                    submitHint.textContent = 'Complete all password requirements above to enable Register.';
+                } else if (!passwordsMatch) {
+                    submitHint.textContent = 'Passwords must match before you can register.';
+                } else if (!formFields.terms.checked) {
+                    submitHint.textContent = 'Please accept the Terms & Conditions.';
+                } else {
+                    submitHint.textContent = '';
+                }
+            } else {
+                submitHint.textContent = '';
+            }
         }
 
         document.querySelectorAll('.toggle-password').forEach((button) => {
