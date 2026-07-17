@@ -57,10 +57,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# Check for placeholder password in DATABASE_URL and use SQLite fallback if found
+db_url = os.getenv('DATABASE_URL', '')
+if 'YOUR_PASSWORD' in db_url or 'YOUR_ACTUAL_PASSWORD' in db_url:
+    # Use SQLite fallback if placeholder password is detected
+    DATABASE_URL = 'sqlite:///' + str(BASE_DIR / 'db.sqlite3')
+else:
+    DATABASE_URL = db_url
+
 DATABASES = {
     'default': dj_database_url.config(
         env="DATABASE_URL",
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        default=DATABASE_URL,
         conn_max_age=600,
     )
 }
