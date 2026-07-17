@@ -1,0 +1,6 @@
+{% extends 'core/base.html' %}
+{% block title %}Admin Audit Log | SkillTrack{% endblock %}
+{% block content %}
+<h1>Administrative Audit Log</h1><p class="muted">A complete record of account, skill, and application activity.</p>
+<section class="panel"><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;padding:12px;border-bottom:1px solid #e5e9f2;">Time</th><th style="text-align:left;padding:12px;border-bottom:1px solid #e5e9f2;">User</th><th style="text-align:left;padding:12px;border-bottom:1px solid #e5e9f2;">Action</th><th style="text-align:left;padding:12px;border-bottom:1px solid #e5e9f2;">Details</th></tr></thead><tbody>{% for log in logs %}<tr><td style="padding:12px;border-bottom:1px solid #e5e9f2;">{{ log.action_time|date:'M j, Y g:i A' }}</td><td style="padding:12px;border-bottom:1px solid #e5e9f2;">{{ log.user|default:'System' }}</td><td style="padding:12px;border-bottom:1px solid #e5e9f2;"><strong>{{ log.action_flag }}</strong></td><td style="padding:12px;border-bottom:1px solid #e5e9f2;">{{ log.change_message }}</td></tr>{% empty %}<tr><td colspan="4" style="padding:24px;text-align:center;">No activity has been logged yet.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

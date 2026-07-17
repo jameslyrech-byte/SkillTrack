@@ -1,0 +1,157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+</head>
+<body class="auth-page">
+    <main class="auth-card" aria-labelledby="register-title">
+        <div class="auth-logo" aria-hidden="true">S</div>
+        <h1 class="auth-title" id="register-title">Create Your Account</h1>
+        <p class="auth-subtitle">Build your portfolio and start tracking certifications.</p>
+
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="auth-message {{ msg.tags }}" role="status">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form class="auth-form" method="POST" id="register-form" novalidate>
+            {% csrf_token %}
+            <label class="auth-field" for="full_name">Full Name</label>
+            <input class="auth-input" id="full_name" type="text" name="full_name" value="{{ full_name|default:'' }}" autocomplete="name" required>
+
+            <label class="auth-field" for="email">Email Address</label>
+            <input class="auth-input" id="email" type="email" name="email" value="{{ email|default:'' }}" autocomplete="email" required>
+
+            <label class="auth-field" for="password">Password</label>
+            <div class="password-row">
+                <input class="auth-input" id="password" type="password" name="password" autocomplete="new-password" required>
+                <button class="toggle-password" type="button" data-target="password" aria-label="Show password">Show</button>
+            </div>
+            <div class="meter" aria-hidden="true"><span id="strength-bar"></span></div>
+            <div class="strength-text" id="strength-text">Use 8+ characters with uppercase, number, and special character.</div>
+            <ul class="password-requirements" id="password-requirements" aria-live="polite">
+                <li id="req-length">At least 8 characters</li>
+                <li id="req-upper">One uppercase letter (A-Z)</li>
+                <li id="req-number">One number (0-9)</li>
+                <li id="req-special">One special character (!@#$...)</li>
+            </ul>
+
+            <label class="auth-field" for="confirm_password">Confirm Password</label>
+            <div class="password-row">
+                <input class="auth-input" id="confirm_password" type="password" name="confirm_password" autocomplete="new-password" required>
+                <button class="toggle-password" type="button" data-target="confirm_password" aria-label="Show password">Show</button>
+            </div>
+            <div class="strength-text" id="match-text"></div>
+
+            <label class="auth-remember" for="terms">
+                <input id="terms" type="checkbox" name="terms" required>
+                <span>I agree to the Terms &amp; Conditions</span>
+            </label>
+
+            <button class="auth-button" id="submit-button" type="submit" disabled>Register</button>
+            <p class="submit-hint" id="submit-hint" role="status"></p>
+        </form>
+
+        <p class="auth-footer auth-text">Already have an account? <a class="auth-link" href="{% url 'login' %}">Log In</a></p>
+    </main>
+
+    <script>
+        const formFields = {
+            name: document.getElementById('full_name'),
+            email: document.getElementById('email'),
+            password: document.getElementById('password'),
+            confirm: document.getElementById('confirm_password'),
+            terms: document.getElementById('terms')
+        };
+        const submit = document.getElementById('submit-button');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
+        const matchText = document.getElementById('match-text');
+        const submitHint = document.getElementById('submit-hint');
+        const requirements = {
+            length: document.getElementById('req-length'),
+            upper: document.getElementById('req-upper'),
+            number: document.getElementById('req-number'),
+            special: document.getElementById('req-special'),
+        };
+
+        function passwordChecks(value) {
+            return {
+                length: value.length >= 8,
+                upper: /[A-Z]/.test(value),
+                number: /\d/.test(value),
+                special: /[^A-Za-z0-9]/.test(value),
+            };
+        }
+
+        function passwordScore(value) {
+            return Object.values(passwordChecks(value)).filter(Boolean).length;
+        }
+
+        function syncForm() {
+            const password = formFields.password.value;
+            const checks = passwordChecks(password);
+            const score = passwordScore(password);
+            const labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+            const colors = ['#b42318', '#b42318', '#a15c07', '#0f766e', '#157347'];
+
+            Object.keys(requirements).forEach((key) => {
+                requirements[key].classList.toggle('met', checks[key]);
+            });
+
+            strengthBar.style.width = `${score * 25}%`;
+            strengthBar.style.background = colors[score];
+            strengthText.textContent = password
+                ? `Password strength: ${labels[score]}`
+                : 'Use 8+ characters with uppercase, number, and special character.';
+
+            const passwordsMatch = password && password === formFields.confirm.value;
+            matchText.textContent = formFields.confirm.value && !passwordsMatch ? 'Passwords do not match.' : '';
+            matchText.style.color = '#b42318';
+
+            const canSubmit = formFields.name.value.trim()
+                && formFields.email.value.trim()
+                && score === 4
+                && passwordsMatch
+                && formFields.terms.checked;
+
+            submit.disabled = !canSubmit;
+
+            if (!canSubmit) {
+                if (!formFields.name.value.trim() || !formFields.email.value.trim()) {
+                    submitHint.textContent = 'Enter your full name and email to continue.';
+                } else if (score < 4) {
+                    submitHint.textContent = 'Complete all password requirements above to enable Register.';
+                } else if (!passwordsMatch) {
+                    submitHint.textContent = 'Passwords must match before you can register.';
+                } else if (!formFields.terms.checked) {
+                    submitHint.textContent = 'Please accept the Terms & Conditions.';
+                } else {
+                    submitHint.textContent = '';
+                }
+            } else {
+                submitHint.textContent = '';
+            }
+        }
+
+        document.querySelectorAll('.toggle-password').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                const target = document.getElementById(event.currentTarget.dataset.target);
+                const showing = target.type === 'text';
+                target.type = showing ? 'password' : 'text';
+                event.currentTarget.textContent = showing ? 'Show' : 'Hide';
+                event.currentTarget.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+            });
+        });
+
+        Object.values(formFields).forEach((field) => field.addEventListener('input', syncForm));
+        formFields.terms.addEventListener('change', syncForm);
+        syncForm();
+    </script>
+</body>
+</html>

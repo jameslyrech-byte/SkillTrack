@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=20260701">
+</head>
+<body class="auth-page">
+    <main class="login-layout" aria-labelledby="login-title">
+        <section class="login-hero" aria-label="SkillTrack overview">
+            <div class="login-hero-top">
+                <span class="login-hero-brand" aria-hidden="true">S</span>
+                <span class="login-hero-brand-text">SkillTrack</span>
+            </div>
+            <h2>Grow your skills with a clear view of every milestone.</h2>
+            <p>Track certifications, monitor progress, and celebrate wins all from one connected workspace.</p>
+            <ul class="login-hero-list">
+                <li>
+                    <span aria-hidden="true">✓</span>
+                    <span>
+                        <strong>Weekly progress snapshots</strong>
+                        <small>Monitor your growth in one glance</small>
+                    </span>
+                </li>
+                <li>
+                    <span aria-hidden="true">⚡</span>
+                    <span>
+                        <strong>Fast team updates</strong>
+                        <small>Keep your projects moving forward</small>
+                    </span>
+                </li>
+                <li>
+                    <span aria-hidden="true">🔒</span>
+                    <span>
+                        <strong>Secure access</strong>
+                        <small>Protected account experience</small>
+                    </span>
+                </li>
+            </ul>
+        </section>
+
+        <section class="auth-card login-card" aria-label="Sign in form">
+            <div class="auth-logo" aria-hidden="true">S</div>
+            <h1 class="auth-title" id="login-title">Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to continue your SkillTrack journey.</p>
+
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="auth-message {{ msg.tags }}" role="status">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form class="auth-form" method="POST" id="login-form" novalidate>
+                {% csrf_token %}
+                <label class="auth-field" for="email">Email Address</label>
+                <input class="auth-input" id="email" type="email" name="email" value="{{ email|default:'' }}" autocomplete="email" placeholder="user@domain.com" required>
+
+                <label class="auth-field" for="password">Password</label>
+                <div class="password-row">
+                    <input class="auth-input" id="password" type="password" name="password" autocomplete="current-password" required>
+                    <button class="toggle-password" type="button" data-target="password" aria-label="Show password">Show</button>
+                </div>
+
+                <div class="auth-inline-row">
+                    <label class="auth-remember" for="remember_me">
+                        <input id="remember_me" type="checkbox" name="remember_me">
+                        Remember Me
+                    </label>
+                    <a class="auth-link" href="{% url 'password_reset' %}">Forgot Password?</a>
+                </div>
+
+                <button class="auth-button" id="submit-button" type="submit" disabled>Sign In</button>
+            </form>
+
+            <p class="auth-footer auth-text">Don't have an account? <a class="auth-link" href="{% url 'register' %}">Sign Up</a></p>
+        </section>
+    </main>
+
+    <script>
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+        const submit = document.getElementById('submit-button');
+
+        function syncSubmitState() {
+            submit.disabled = !email.value.trim() || !password.value.trim();
+        }
+
+        document.querySelector('.toggle-password').addEventListener('click', (event) => {
+            const target = document.getElementById(event.currentTarget.dataset.target);
+            const showing = target.type === 'text';
+            target.type = showing ? 'password' : 'text';
+            event.currentTarget.textContent = showing ? 'Show' : 'Hide';
+            event.currentTarget.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+        });
+
+        email.addEventListener('input', syncSubmitState);
+        password.addEventListener('input', syncSubmitState);
+        syncSubmitState();
+    </script>
+</body>
+</html>

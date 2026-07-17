@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ title }} | SkillTrack{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="muted">Add a technical skill to your profile so SkillTrack can compare it with job requirements.</p>
+<section class="panel"><form method="post">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <label for="{{ form.skill_name.id_for_label }}">Skill name</label>{{ form.skill_name }}{{ form.skill_name.errors }}
+    <label for="{{ form.proficiency_level.id_for_label }}">Proficiency level</label>{{ form.proficiency_level }}{{ form.proficiency_level.errors }}
+    <label for="{{ form.category.id_for_label }}">Category</label>{{ form.category }}{{ form.category.errors }}
+    <button type="submit">Save skill</button> <a href="{% url 'dashboard' %}">Cancel</a>
+</form></section>
+{% endblock %}

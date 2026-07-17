@@ -1,0 +1,3 @@
+{% extends 'core/base.html' %}{% block title %}Notifications | SkillTrack{% endblock %}{% block content %}
+<h1>Notifications</h1><section class="panel">{% for notification in notifications %}<div class="item"><strong>{{ notification.action_flag }}</strong> — {{ notification.change_message }}<br><span class="muted">{{ notification.action_time }}</span></div>{% empty %}<p>You have no notifications yet.</p>{% endfor %}</section>
+{% endblock %}
