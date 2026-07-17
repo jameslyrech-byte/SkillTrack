@@ -7,13 +7,21 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-custom-fallback-key-here-make-it-long')
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-custom-fallback-key-here-make-it-long')
+
+# Ensure DATABASE_URL is set in production
+if not DEBUG and not os.getenv('DATABASE_URL'):
+    raise ValueError("DATABASE_URL environment variable is required in production")
+
+# Ensure SECRET_KEY is not the default in production
+if not DEBUG and SECRET_KEY == 'django-insecure-your-custom-fallback-key-here-make-it-long':
+    raise ValueError("SECRET_KEY environment variable must be set in production")
+
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
 
 # Application definition
 INSTALLED_APPS = [
@@ -60,8 +68,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         env="DATABASE_URL",
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
         conn_max_age=600,
-        ssl_require=True,
     )
 }
 
@@ -87,18 +95,16 @@ WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.zip', '.gz', '.tgz', '.bz2', '.tbz', '.xz', '.br']
 
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = 'SkillTrack.User'
 
 AUTHENTICATION_BACKENDS = [
     'SkillTrack.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# The application code is in the SkillTrack package; retain the existing
-# migration package and database table labels under "core".
-MIGRATION_MODULES = {
-    'core': 'core.migrations',
-}
+# MIGRATION_MODULES = {
+#     'SkillTrack': 'SkillTrack.migrations',
+# }
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
