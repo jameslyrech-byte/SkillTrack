@@ -57,10 +57,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Check for placeholder password in DATABASE_URL and use SQLite fallback if found
+# Database configuration
+# Use SQLite for development, PostgreSQL for production
 db_url = os.getenv('DATABASE_URL', '')
-if 'YOUR_PASSWORD' in db_url or 'YOUR_ACTUAL_PASSWORD' in db_url:
-    # Use SQLite fallback if placeholder password is detected
+
+# Fallback to SQLite if no DATABASE_URL is set or if it contains placeholder passwords
+if not db_url or 'YOUR_PASSWORD' in db_url or 'YOUR_ACTUAL_PASSWORD' in db_url:
     db_url = 'sqlite:///' + str(BASE_DIR / 'db.sqlite3')
 
 DATABASES = {
