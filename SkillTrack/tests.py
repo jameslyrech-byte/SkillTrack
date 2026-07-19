@@ -31,12 +31,12 @@ class AuthenticationRoutesTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('login'))
+        self.assertRedirects(response, reverse('dashboard'))
 
         User = get_user_model()
-        self.assertTrue(User.objects.filter(username='jane@example.com').exists())
+        self.assertTrue(User.objects.filter(username='jane').exists())
 
-        user = User.objects.get(username='jane@example.com')
+        user = User.objects.get(username='jane')
         self.assertEqual(user.first_name, 'Jane')
         self.assertEqual(user.last_name, 'Doe')
         self.assertTrue(user.check_password('StrongPass!123'))
