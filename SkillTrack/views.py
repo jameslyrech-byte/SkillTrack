@@ -1,4 +1,5 @@
 import re
+import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
@@ -15,6 +16,7 @@ from .models import UserSkill, JobApplication, AdminLog
 from .forms import UserRegisterForm, UserSkillForm, JobApplicationForm, UserProfileForm
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 LOCKOUT_LIMIT = 5
 LOCKOUT_SECONDS = 15 * 60
@@ -42,12 +44,19 @@ def _valid_email(email):
 
 
 def log_action(user, action_flag, change_message):
-    """Utility to create an AdminLog entry for audits"""
-    AdminLog.objects.create(
-        user=user if (user and user.is_authenticated) else None,
-        action_flag=action_flag,
-        change_message=change_message
-    )
+    """Create an audit entry without making authentication unavailable.
+
+    Audit logs are useful, but registration and login must still succeed if an
+    older deployment's optional audit table has not yet been migrated.
+    """
+    try:
+        AdminLog.objects.create(
+            user=user if (user and user.is_authenticated) else None,
+            action_flag=action_flag,
+            change_message=change_message,
+        )
+    except Exception:
+        logger.exception('Unable to create audit log entry')
 
 
 # --- AUTHENTICATION VIEWS ---
