@@ -51,8 +51,8 @@ SkillTrack is a centralized, web-based software platform designed to help studen
 
 ## Render + Supabase deployment
 
-In the Render web service's **Environment** settings, add `DATABASE_URL` with
-your complete Supabase PostgreSQL URI, replacing `[YOUR-PASSWORD]` with the
-database password. Do not commit that password to GitHub. The Render start
-command runs `python manage.py migrate --noinput` automatically before starting
-the application.
+In the Render web service's **Environment** settings, add
+`SUPABASE_DB_PASSWORD` with only the Supabase database password. This avoids
+connection-string parsing errors when the password contains characters such as
+`@`, `:`, or `#`. Do not commit that password to GitHub. The Render build runs
+`python manage.py migrate --noinput` before starting the application.

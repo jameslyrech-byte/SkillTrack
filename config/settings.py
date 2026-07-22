@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import quote
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -77,8 +78,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database configuration
-# Use SQLite for development, PostgreSQL for production
-db_url = os.getenv('DATABASE_URL', '')
+# A Supabase password may include URL-reserved characters such as @, :, or #.
+# Accept it as a separate Render secret and quote it here, rather than relying
+# on a hand-edited connection URL.
+supabase_password = os.getenv('SUPABASE_DB_PASSWORD')
+if supabase_password:
+    db_url = (
+        'postgresql://postgres.srsoalrumgaodcgpbhqv:'
+        f'{quote(supabase_password, safe="")}'
+        '@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require'
+    )
+else:
+    db_url = os.getenv('DATABASE_URL', '')
 
 # SQLite is convenient for local development, but a placeholder connection
 # string must never be treated as a working production database.
